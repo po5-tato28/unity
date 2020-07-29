@@ -7,6 +7,8 @@ using Firebase.Storage;
 
 public class UploadScreenshot : MonoBehaviour
 {
+    const string PATH = "gs://ougi-fb.appspot.com";
+
     public void StartUpload(Texture2D screenshot)
     {
         StartCoroutine(UploadCoroutine(screenshot));
@@ -14,13 +16,22 @@ public class UploadScreenshot : MonoBehaviour
 
     private IEnumerator UploadCoroutine(Texture2D screenshot)
     {
-        FirebaseStorage storage = FirebaseStorage.DefaultInstance;
-        StorageReference screenshotReference = storage.GetReferenceFromUrl("gs://ougi-fb.appspot.com").Child($"/screenshots/{Guid.NewGuid()}.png");
+        #region DateTime-Set
+        DateTime dateTime = DateTime.Now;
+        // 시-분-초
+        string time = dateTime.Hour.ToString() + "-" + dateTime.Minute.ToString() + "-" + dateTime.Second.ToString();
+        #endregion
 
+        string TOTAL_DATE = dateTime.ToShortDateString() + "+" + time;
+
+        FirebaseStorage storage = FirebaseStorage.DefaultInstance;
+        StorageReference screenshotReference = storage.GetReferenceFromUrl(PATH).Child($"/screenshots/{TOTAL_DATE}.png");
+
+        #region Set-Metadata
         var metadataChange = new MetadataChange()
         {
             ContentEncoding = "image/png",
-            /*
+            /* 여기는 메타데이터 설정
             CustomMetadata = new Dictionary<string, string>()
             {
                 { "Position", Camera.main.transform.position.ToString()},
@@ -28,6 +39,7 @@ public class UploadScreenshot : MonoBehaviour
             }
             */
         };
+        #endregion
 
         var bytes = screenshot.EncodeToPNG();
         var uploadTask = screenshotReference.PutBytesAsync(bytes, metadataChange);
@@ -38,16 +50,5 @@ public class UploadScreenshot : MonoBehaviour
             Debug.LogError($"업로드에 실패했습니다. {uploadTask.Exception}");
             yield break;
         }
-
-        var getUrlTask = screenshotReference.GetDownloadUrlAsync();
-        yield return new WaitUntil(() => getUrlTask.IsCompleted);
-
-        if(getUrlTask.Exception != null)
-        {
-            Debug.LogError($"다운로드 실패 {getUrlTask.Exception}");
-            yield break;
-        }
-
-        Debug.Log($"{getUrlTask.Result}에서 받아옴");
     }
 }

@@ -12,7 +12,7 @@ public class DownloadScreenshot : MonoBehaviour
     // path = "gs://ougi-fb.appspot.com/screenshots"
     // inspecter 창에서 입력해주면 됨
    
-    public void Trigger(string path)
+    public void StartDownloadScreenshot(string path)
     {
         StartCoroutine(DownloadScreenshotCoroutine(path));
     }
@@ -21,8 +21,8 @@ public class DownloadScreenshot : MonoBehaviour
     {
         // 다운할 파일의 경로지정
         var storage = FirebaseStorage.DefaultInstance;
-        // 저장할 때 파일이름을 Guid로 저장해서 사진 아무거나 임의로 지정함
-        var screenshotReference = storage.GetReference(path).Child($"/screenshots/44799135-88f8-4350-b473-0757ea3a97e8.png");
+        // 파일이름 임의로 지정
+        var screenshotReference = storage.GetReference(path).Child($"/screenshots/2020-07-29+22-38-14.png");
 
         #region Print-On-Texture2D
         // Storage에서 이미지 다운받아 Texture에 출력하기
@@ -47,8 +47,7 @@ public class DownloadScreenshot : MonoBehaviour
         // Storage에서 이미지 다운 받아 로컬 파일에 저장하기
 
         // 로컬 파일 경로 지정 (저장할 곳)
-        string local_url = Application.dataPath + "/StreamingAssets/screenshot.png";
-        Debug.Log(string.Format("Target Path: {0}", local_url));
+        string local_url = Application.dataPath + "/StreamingAssets/2020-07-29+22-38-14.png";
 
         var imgDownloadTask = screenshotReference.GetFileAsync(local_url);
         yield return new WaitUntil(() => imgDownloadTask.IsCompleted);
