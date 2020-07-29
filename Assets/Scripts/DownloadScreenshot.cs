@@ -9,6 +9,9 @@ public class DownloadScreenshot : MonoBehaviour
 {
     public ScreenshotEvent OnScreenshotDownloaded = new ScreenshotEvent();
 
+    // path = "gs://ougi-fb.appspot.com/screenshots"
+    // inspecter 창에서 입력해주면 됨
+   
     public void Trigger(string path)
     {
         StartCoroutine(DownloadScreenshotCoroutine(path));
@@ -16,15 +19,48 @@ public class DownloadScreenshot : MonoBehaviour
 
     private IEnumerator DownloadScreenshotCoroutine(string path)
     {
+        // 다운할 파일의 경로지정
         var storage = FirebaseStorage.DefaultInstance;
-        var screenshotReference = storage.GetReference(path);
+        // 저장할 때 파일이름을 Guid로 저장해서 사진 아무거나 임의로 지정함
+        var screenshotReference = storage.GetReference(path).Child($"/screenshots/44799135-88f8-4350-b473-0757ea3a97e8.png");
 
+        #region Print-On-Texture2D
+        // Storage에서 이미지 다운받아 Texture에 출력하기
+
+        //GetBytesAsync(long.MaxValue); => 최대 사이즈 지정해준 것
         var downloadTask = screenshotReference.GetBytesAsync(long.MaxValue);
         yield return new WaitUntil(() => downloadTask.IsCompleted);
+        if(downloadTask.Exception != null)
+        {
+            Debug.LogError($"다운로드에 실패했습니다. {downloadTask.Exception}");
+            yield break;
+        }
 
+        // 대충... 다운 받은 이미지를 texture (= 유니티 RawImage로 지정함)에 출력해준다는 의미!
         var texture = new Texture2D(2, 2);
         texture.LoadImage(downloadTask.Result);
         OnScreenshotDownloaded.Invoke(texture);
+
+        #endregion
+
+        #region Save-At-Local-File
+        // Storage에서 이미지 다운 받아 로컬 파일에 저장하기
+
+        // 로컬 파일 경로 지정 (저장할 곳)
+        string local_url = Application.dataPath + "/StreamingAssets/screenshot.png";
+        Debug.Log(string.Format("Target Path: {0}", local_url));
+
+        var imgDownloadTask = screenshotReference.GetFileAsync(local_url);
+        yield return new WaitUntil(() => imgDownloadTask.IsCompleted);
+        if (imgDownloadTask.Exception != null)
+        {
+            Debug.LogError(downloadTask.Exception);
+        }
+        else
+        { 
+            Debug.Log("이미지 저장 완료" + local_url);
+        }
+        #endregion
     }
 
     [System.Serializable]
